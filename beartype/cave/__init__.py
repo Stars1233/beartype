@@ -7,11 +7,11 @@
 **Beartype cave.**
 
 This submodule collects common types (e.g., :class:`NoneType`, the type of the
-``None`` singleton) and tuples of common types (e.g., :data:`CallableTypes`, a
-tuple of the types of all callable objects).
+:data:`None` singleton) and tuples of common types (e.g., :data:`CallableTypes`,
+a tuple of the types of all callable objects).
 
 PEP 484
-----------
+-------
 This module is intentionally *not* compliant with the :pep:`484` standard
 implemented by the stdlib :mod:`typing` module, which formalizes type hinting
 annotations with a catalogue of generic classes and metaclasses applicable to
@@ -77,13 +77,8 @@ low-level primitive    :func:`isinstance`    :mod:`typing.TypingMeta`
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 from beartype.cave._cavelib import (
-    # Types.
     ArgParserType as ArgParserType,
     ArgSubparsersType as ArgSubparsersType,
-    WeakRefCType as WeakRefCType,
-
-    # Type tuples.
-    WeakRefProxyCTypes as WeakRefProxyCTypes,
 )
 from beartype._cave._caveabc import (
     BoolType as BoolType,
@@ -144,6 +139,7 @@ from beartype._cave._cavefast import (
     SequenceType as SequenceType,
     StrType as StrType,
     UnavailableType as UnavailableType,
+    WeakrefCallableType as WeakrefCallableType,
 
     # Type tuples.
     AsyncCTypes as AsyncCTypes,
@@ -167,6 +163,7 @@ from beartype._cave._cavefast import (
     ScalarTypes as ScalarTypes,
     TestableTypes as TestableTypes,
     UnavailableTypes as UnavailableTypes,
+    WeakrefProxyTypes as WeakrefProxyTypes,
 )
 from beartype._cave._cavemap import (
     NoneTypeOr as NoneTypeOr,
@@ -192,17 +189,17 @@ def __getattr__(attr_deprecated_name: str) -> object:
         Unqualified name of the deprecated attribute to be retrieved.
 
     Returns
-    ----------
+    -------
     object
         Value of this deprecated attribute.
 
     Warns
-    ----------
+    -----
     :class:`DeprecationWarning`
         If this attribute is deprecated.
 
     Raises
-    ----------
+    ------
     :exc:`AttributeError`
         If this attribute is unrecognized and thus erroneous.
     '''
@@ -215,6 +212,8 @@ def __getattr__(attr_deprecated_name: str) -> object:
         attr_deprecated_name=attr_deprecated_name,
         attr_deprecated_name_to_nondeprecated_name={
             'HintPep585Type': 'HintGenericSubscriptedType',
+            'WeakRefCType': 'WeakrefCallableType',
+            'WeakRefProxyCTypes': 'WeakrefProxyTypes',
         },
         attr_nondeprecated_name_to_value=globals(),
     )

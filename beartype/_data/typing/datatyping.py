@@ -25,26 +25,8 @@ from ast import (
     ClassDef,
     FunctionDef,
 )
-from beartype.typing import (
-    AbstractSet,
-    Any,
-    Callable,
-    Collection,
-    Dict,
-    ForwardRef,
-    FrozenSet,
-    Iterable,
-    Iterator,
-    List,
-    Literal,
-    Mapping,
-    Set,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
 from beartype._cave._cavefast import (
+    CallableCodeObjectType,
     FunctionType,
     HintPep604Type,
     HintPep612ParamSpecType,
@@ -56,12 +38,19 @@ from beartype._cave._cavefast import (
     MethodDecoratorPropertyType,
     MethodDecoratorStaticType,
     ModuleType,
+    WeakrefCallableType,
 )
 from beartype._data.func.datafuncarg import ARG_VALUE_UNPASSED
 from beartype._data.hint.sign.datahintsigncls import HintSign
 from beartype._data.kind.datakindiota import Iota
 from collections import ChainMap
-from collections.abc import Callable as CallableABC
+from collections.abc import (
+    Callable,
+    Collection,
+    Iterable,
+    Iterator,
+    Set,
+)
 from importlib.abc import PathEntryFinder
 from pathlib import Path
 from types import (
@@ -69,7 +58,14 @@ from types import (
     FrameType,
     GeneratorType,
 )
-# from typing import TYPE_CHECKING
+from typing import (
+    Any,
+    ForwardRef,
+    Literal,
+    Mapping,
+    TypeVar,
+    Union,
+)
 
 #FIXME: Doesn't seem to help. mypy 0.19.0 appears to busted, sadly. We sigh.
 # # If a static type-checker is type-checking us, import circular imports. Ugh!
@@ -246,6 +242,14 @@ object satisfies an arbitrary constraint *or* :data:`False` otherwise).
 '''
 
 
+# ....................{ CALLABLE ~ args                    }....................
+CallableMethodGetitemArg = int | slice
+'''
+PEP-compliant type hint matching the standard type of the single positional
+argument accepted by the ``__getitem__` dunder method.
+'''
+
+# ....................{ CALLABLE ~ code object             }....................
 Codeobjable = Callable | CodeType | FrameType | GeneratorType
 '''
 PEP-compliant type hint matching a **codeobjable** (i.e., pure-Python object
@@ -261,11 +265,21 @@ Specifically, this hint matches:
 * Pure-Python callable stack frames.
 '''
 
-# ....................{ CALLABLE ~ args                    }....................
-CallableMethodGetitemArg = int | slice
+
+FuncLocalParentCodeObjectWeakref = (
+    WeakrefCallableType[CallableCodeObjectType] | None)
 '''
-PEP-compliant type hint matching the standard type of the single positional
-argument accepted by the ``__getitem__` dunder method.
+:pep:`484`-compliant type hint matching either **code object weak references**
+(i.e., C-based :class:`weakref.ref` objects weakly referring to C-based code
+objects underlying pure-Python callables) *or* the :data:`None` singleton.
+
+This hint specifically matches the value of:
+
+* The low-level
+  :attr:`beartype._check.forward.reference.fwdrefabc.BeartypeForwardRefABC.__func_local_parent_codeobj_weakref_beartype__`
+  class variable.
+* All optional ``func_local_parent_codeobj_weakref`` parameters accepted by
+  higher-level functions distributed throughout the codebase.
 '''
 
 # ....................{ CALLABLE ~ decorator               }....................
@@ -340,27 +354,27 @@ PEP-compliant type hint matching *any* collection of zero or more strings.
 '''
 
 # ....................{ DICT                               }....................
-DictTypeToAny = Dict[type, Any]
+DictTypeToAny = dict[type, Any]
 '''
 PEP-compliant type hint matching a dictionary mapping from types to arbitrary
 objects.
 '''
 
 # ....................{ DICT ~ str                         }....................
-DictStrToAny = Dict[str, Any]
+DictStrToAny = dict[str, Any]
 '''
 PEP-compliant type hint matching a dictionary mapping from strings to arbitrary
 objects.
 '''
 
 
-DictStrToType = Dict[str, type]
+DictStrToType = dict[str, type]
 '''
 PEP-compliant type hint matching a dictionary mapping from strings to types.
 '''
 
 
-DictStrToFrozenSetStrs = Dict[str, FrozenSet[str]]
+DictStrToFrozenSetStrs = dict[str, frozenset[str]]
 '''
 PEP-compliant type hint matching a dictionary mapping from strings to frozen
 sets of strings.
@@ -408,7 +422,7 @@ PEP-compliant type hint matching *any* iterable of zero or more strings.
 '''
 
 # ....................{ ITERATOR                           }....................
-EnumeratorItem = Tuple[int, object]
+EnumeratorItem = tuple[int, object]
 '''
 PEP-compliant type hint matching *any* **enumerator item** (i.e., item of the
 iterator created and returned by the :func:`enumerate` builtin). An enumerator
@@ -430,7 +444,7 @@ zero or more 2-tuples of the form ``(item_index, item)``, where:
 '''
 
 # ....................{ LIST                               }....................
-ListStrs = List[str]
+ListStrs = list[str]
 '''
 :pep:`585`-compliant type hint matching a list of strings.
 '''
@@ -443,7 +457,7 @@ objects.
 '''
 
 # ....................{ OBJECT                             }....................
-GetObjectAttrsDir = List[str] | None
+GetObjectAttrsDir = list[str] | None
 '''
 PEP-compliant type hint matching the ``obj_dir`` parameter accepted by all
 **object attribute getters** (e.g.,
@@ -468,25 +482,25 @@ test-specific :mod:`beartype_test._util.command.pytcmdrun` submodule).
 '''
 
 # ....................{ SET                                }....................
-SetStrs = Set[str]
+SetStrs = set[str]
 '''
 PEP-compliant type hint matching *any* mutable set of zero or more strings.
 '''
 
 # ....................{ SET ~ frozenset                    }....................
-FrozenSetInts = FrozenSet[int]
+FrozenSetInts = frozenset[int]
 '''
 PEP-compliant type hint matching *any* frozen set of zero or more integers.
 '''
 
 
-FrozenSetStrs = FrozenSet[str]
+FrozenSetStrs = frozenset[str]
 '''
 PEP-compliant type hint matching *any* frozen set of zero or more strings.
 '''
 
 
-FrozenSetTypes = FrozenSet[type]
+FrozenSetTypes = frozenset[type]
 '''
 PEP-compliant type hint matching *any* frozen set of zero or more types.
 '''
@@ -500,7 +514,7 @@ sentinel placeholder.
 '''
 
 # ....................{ SIGN ~ container                   }....................
-FrozenSetHintSign = FrozenSet[HintSign]
+FrozenSetHintSign = frozenset[HintSign]
 '''
 PEP-compliant type matching matching a frozen set of **signs** (i.e.,
 :class:`.HintSign` objects uniquely identifying type hints).
@@ -514,14 +528,14 @@ PEP-compliant type matching matching a iterable of **signs** (i.e.,
 '''
 
 # ....................{ SIGN ~ container : dict            }....................
-DictStrToHintSign = Dict[str, HintSign]
+DictStrToHintSign = dict[str, HintSign]
 '''
 PEP-compliant type hint matching a dictionary mapping from strings to **signs**
 (i.e., :class:`.HintSign` objects uniquely identifying type hints).
 '''
 
 
-HintSignTrie = Dict[str, Union[HintSign, 'HintSignTrie']]
+HintSignTrie = dict[str, Union[HintSign, 'HintSignTrie']]
 '''
 PEP-compliant type hint matching a **sign trie** (i.e.,
 dictionary-of-dictionaries tree data structure enabling efficient mapping from
@@ -531,7 +545,7 @@ their identifying sign).
 '''
 
 
-HintSignToCallableStrFormat = Dict[HintSign, CallableStrFormat]
+HintSignToCallableStrFormat = dict[HintSign, CallableStrFormat]
 '''
 PEP-compliant type hint matching a **sign-to-string-formatter map** (i.e.,
 dictionary mapping from signs uniquely identifying type hints to
@@ -571,7 +585,7 @@ While ad-hoc, this data structure has proven useful throughout the codebase.
 '''
 
 # ....................{ TYPE                               }....................
-AbstractSetTypes = AbstractSet[type]
+AbstractSetTypes = Set[type]
 '''
 :pep:`585`-compliant type hint matching a set of zero or more classes.
 '''
@@ -583,13 +597,13 @@ PEP-compliant type hint matching an iterable of zero or more types.
 '''
 
 
-SetTypes = Set[type]
+SetTypes = set[type]
 '''
 PEP-compliant type hint matching a mutable set of zero or more types.
 '''
 
 
-TupleTypes = Tuple[type, ...]
+TupleTypes = tuple[type, ...]
 '''
 :pep:`585`-compliant type hint matching a tuple of zero or more classes.
 
@@ -702,27 +716,6 @@ number of classes lexically nesting the currently decorated class as input
 metadata, as trivially provided by the length of this tuple.
 '''
 
-# ....................{ API ~ beartype                     }....................
-#FIXME: mypy used to type-check this properly. Pyright never did. But even mypy
-#1.19.0 no longer accepts this. Weird stuff. Oh, well... who cares, huh?
-BeartypeForwardRef = Type[
-    'beartype._check.forward.reference.fwdrefabc.BeartypeForwardRefABC']   # type: ignore[name-defined]
-'''
-PEP-compliant type hint matching a **forward reference proxy** (i.e., concrete
-subclass of the abstract
-:class:`beartype._check.forward.reference.fwdrefabc.BeartypeForwardRefABC`
-superclass).
-'''
-
-
-BeartypeForwardRefArgs = Tuple[StrOrNone, str, TupleTypes]
-'''
-PEP-compliant type hint matching a **forward reference proxy argument list**
-(i.e., tuple of all parameters passed to each call of the low-level private
-:func:`beartype._check.forward.reference.fwdrefmake._make_forwardref_subtype`
-factory function, in the same order as positionally accepted by that function).
-'''
-
 # ....................{ API ~ importlib                    }....................
 # Type hints specific to the standard "importlib" package.
 
@@ -752,7 +745,7 @@ low-level strings possibly signifying pathnames *or* high-level :class:`Path`
 instances definitely encapsulating pathnames).
 '''
 
-# ....................{ PEP ~ 484                          }....................
+# ....................{ PEP ~ 484 : forward reference      }....................
 # Type hints required to fully comply with PEP 484.
 
 HintPep484Ref = str | ForwardRef
@@ -764,6 +757,28 @@ See Also
 --------
 :data:`beartype._cave._cavefast.HintPep484RefTypes`
     Further details.
+'''
+
+
+#FIXME: mypy used to type-check this properly. Pyright never did. But even mypy
+#1.19.0 no longer accepts this. Weird stuff. Oh, well... who cares, huh?
+BeartypeForwardRef = type[
+    'beartype._check.forward.reference.fwdrefabc.BeartypeForwardRefABC']   # type: ignore[name-defined]
+'''
+PEP-compliant type hint matching a **forward reference proxy** (i.e., concrete
+subclass of the abstract
+:class:`beartype._check.forward.reference.fwdrefabc.BeartypeForwardRefABC`
+superclass).
+'''
+
+
+BeartypeForwardRefArgs = tuple[
+    TupleTypes, str, str, FuncLocalParentCodeObjectWeakref]
+'''
+PEP-compliant type hint matching a **forward reference proxy argument list**
+(i.e., tuple of all parameters passed to each call of the low-level private
+:func:`beartype._check.forward.reference.fwdrefmake._make_forwardref_subtype`
+factory function, in the same order as positionally accepted by that function).
 '''
 
 # ....................{ PEP ~ 484 : tower                  }....................
@@ -794,7 +809,7 @@ different types throughout the :mod:`beartype` codebase.
 '''
 
 
-CallableT = TypeVar('CallableT', bound=CallableABC)
+CallableT = TypeVar('CallableT', bound=Callable)
 '''
 **Callable type variable** (i.e., bound to match *only* callables).
 '''
@@ -807,14 +822,14 @@ syntax tree (AST) nodes).
 '''
 
 # ....................{ PEP ~ 484 : typevar : container    }....................
-SetTypeVars = Set[TypeVar]
+SetTypeVars = set[TypeVar]
 '''
 :pep:`585`-compliant type hint matching a mutable set of zero or more
 :pep:`484`-compliant **type variables** (i.e., :class:`.TypeVar` objects).
 '''
 
 
-TupleTypeVars = Tuple[TypeVar, ...]
+TupleTypeVars = tuple[TypeVar, ...]
 '''
 :pep:`585`-compliant type hint matching a tuple of zero or more
 :pep:`484`-compliant **type variables** (i.e., :class:`.TypeVar` objects).
@@ -855,7 +870,7 @@ this hint is still preferable to even more ambiguous alternatives like
 '''
 
 
-TuplePep484612646TypeArgsPacked = Tuple[Pep484612646TypeArgPacked, ...]
+TuplePep484612646TypeArgsPacked = tuple[Pep484612646TypeArgPacked, ...]
 '''
 :pep:`585`-compliant type hint matching a tuple of zero or more **packed type
 parameters** (i.e., :pep:`484`-compliant type variables, pep:`612`-compliant
@@ -863,7 +878,7 @@ parameter specifications, or :pep:`646`-compliant type variable tuples).
 '''
 
 
-TuplePep484612646TypeArgsUnpacked = Tuple[Pep484612646TypeArgUnpacked, ...]
+TuplePep484612646TypeArgsUnpacked = tuple[Pep484612646TypeArgUnpacked, ...]
 '''
 :pep:`585`-compliant type hint matching a tuple of zero or more :pep:`484`-,
 pep:`612`-, or :pep:`646`-compliant **unpacked type parameters** (i.e.,
@@ -907,13 +922,13 @@ Specifically, this hint matches:
 '''
 
 # ....................{ TYPE                               }....................
-TypeException = Type[Exception]
+TypeException = type[Exception]
 '''
 PEP-compliant type hint matching *any* exception class.
 '''
 
 
-TypeWarning = Type[Warning]
+TypeWarning = type[Warning]
 '''
 PEP-compliant type hint matching *any* warning category.
 '''

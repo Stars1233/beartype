@@ -77,7 +77,10 @@ from typing import (
     Any,
     ForwardRef as _ForwardRef,
 )
-from weakref import ref as _ref
+from weakref import (
+    ProxyTypes as _WeakrefProxyTypes,
+    ref as _WeakrefCallableType,
+)
 
 # Note that:
 #
@@ -301,12 +304,26 @@ lock silently succeed).
 '''
 
 # ....................{ TYPES ~ api : weakref              }....................
-# C-based type of all non-reentrant thread locks, defined as either...
-WeakrefType = _ref
+WeakrefCallableType = _WeakrefCallableType
 '''
-C-based type of all **weak reference proxies** (i.e., :class:`weakref.ref`
+Type of all **weak reference proxies** (i.e., C-based :class:`weakref.ref`
 objects weakly referring to predominantly pure-Python objects supporting the
 weak reference protocol).
+
+This type matches both the C-based :class:`weakref.ref` class *and* the
+pure-Python :class:`weakref.WeakMethod` class, which subclasses the former.
+Instances of this type are callable objects yielding strong references to their
+referred objects when called.
+'''
+
+
+WeakrefProxyTypes = _WeakrefProxyTypes
+'''
+Tuple of all **weak reference proxy types** (i.e., C-based types whose instances
+are weak references to other instances masquerading as the latter).
+
+This tuple contains types matching both callable and uncallable weak reference
+proxies.
 '''
 
 # ....................{ TYPES ~ call                       }....................

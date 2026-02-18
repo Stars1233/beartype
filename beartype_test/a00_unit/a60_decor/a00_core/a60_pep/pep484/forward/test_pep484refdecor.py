@@ -33,7 +33,7 @@ def test_pep484_ref_decor_data() -> None:
         BeartypeCallHintParamViolation,
         BeartypeCallHintReturnViolation,
     )
-    from beartype_test.a00_unit.data.pep.pep484.data_pep484ref import (
+    from beartype_test.a00_unit.data.pep.pep484.forward.data_pep484ref_decor import (
         AllHisBulkAnAgony,
         BeforeTheHurricane,
         TheDarkestEveningOfTheYear,

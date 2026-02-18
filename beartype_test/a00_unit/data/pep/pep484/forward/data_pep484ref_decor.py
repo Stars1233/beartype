@@ -55,7 +55,7 @@ reference to a self-referential type that has yet to be defined.
 # possibly nested in one or more parent type hints.
 
 TheDarkestForwardRefOfTheYear = (
-    'beartype_test.a00_unit.data.pep.pep484.data_pep484ref.TheDarkestEveningOfTheYear')
+    'beartype_test.a00_unit.data.pep.pep484.forward.data_pep484ref_decor.TheDarkestEveningOfTheYear')
 @beartype
 def the_woods_are_lovely(dark_and_deep: TheDarkestForwardRefOfTheYear) -> (
     TheDarkestForwardRefOfTheYear):

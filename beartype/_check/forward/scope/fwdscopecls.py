@@ -33,11 +33,14 @@ This private submodule is *not* intended for importation by downstream callers.
 
 # ....................{ IMPORTS                            }....................
 from beartype.roar import BeartypeDecorHintForwardRefException
+from beartype._cave._cavefast import WeakrefCallableType
+from beartype._cave._cavemap import NoneTypeOr
 from beartype._check.forward.reference.fwdrefabc import (
     BeartypeForwardRefSubbableABC)
 from beartype._check.forward.reference.fwdrefmake import (
     make_forwardref_subbable_subtype)
 from beartype._data.typing.datatyping import (
+    FuncLocalParentCodeObjectWeakref,
     LexicalScope,
     SetStrs,
 )
@@ -45,6 +48,7 @@ from beartype._data.typing.datatypingport import Hint
 from beartype._util.func.utilfuncframe import (
     get_frame_caller_module_name_or_none,
     is_frame_caller_beartype,
+    iter_frames,
 )
 from beartype._util.kind.maplike.utilmapset import (
     remove_mapping_keys_except)
@@ -53,7 +57,6 @@ from builtins import __dict__ as scope_builtins  # type: ignore[attr-defined]
 from typing import TYPE_CHECKING
 
 # ....................{ SUPERCLASSES                       }....................
-#FIXME: Unit test us up, please.
 class BeartypeForwardScope(LexicalScope):
     '''
     **Forward scope** (i.e., dictionary mapping from the name to value of each
@@ -67,7 +70,7 @@ class BeartypeForwardScope(LexicalScope):
     This dictionary is principally employed to dynamically evaluate stringified
     type hints, including:
 
-    * :pep:`484`-compliant forward references.
+    * :pep:`484`-compliant forward reference type hints.
     * :pep:`563`-postponed type hints.
 
     This dictionary should composite both the local and global scopes (i.e.,
@@ -98,6 +101,14 @@ class BeartypeForwardScope(LexicalScope):
 
     Attributes
     ----------
+    _func_local_parent_codeobj_weakref : FuncLocalParentCodeObjectWeakref
+        Proxy weakly referring to the code object underlying the lexical
+        scope of the parent module, type, or callable whose body locally
+        defines the locally decorated callable if this forward reference
+        proxy subtype proxies a stringified forward reference annotating a
+        locally decorated callable *or* :data:`None` otherwise. See also the
+        :attr:`beartype._check.forward.reference.fwdrefabc.BeartypeForwardRefABC.__func_local_parent_codeobj_weakref_beartype__`
+        class variable docstring for further details.
     _hint_names_destringified : set[str]
         Set of the relative (i.e., unqualified) or absolute (i.e.,
         fully-qualified) names of *all* :pep:`484`-compliant stringified type
@@ -120,6 +131,7 @@ class BeartypeForwardScope(LexicalScope):
     # called @beartype decorations. Slotting has been shown to reduce read and
     # write costs by approximately ~10%, which is non-trivial.
     __slots__ = (
+        '_func_local_parent_codeobj_weakref',
         '_hint_names_destringified',
         '_scope_name',
     )
@@ -127,6 +139,7 @@ class BeartypeForwardScope(LexicalScope):
     # Squelch false negatives from mypy. This is absurd. This is mypy. See:
     #     https://github.com/python/mypy/issues/5941
     if TYPE_CHECKING:
+        _func_local_parent_codeobj_weakref: FuncLocalParentCodeObjectWeakref
         _hint_names_destringified: SetStrs
         _scope_name: str
 
@@ -138,6 +151,8 @@ class BeartypeForwardScope(LexicalScope):
         scope_name: str,
 
         # Optional parameters.
+        func_local_parent_codeobj_weakref: FuncLocalParentCodeObjectWeakref = (
+            None),
         scope_dict: LexicalScope = scope_builtins,
     ) -> None:
         '''
@@ -168,12 +183,27 @@ class BeartypeForwardScope(LexicalScope):
               resolve a global class or callable against this scope).
             * ``"some_package.some_module.SomeClass"`` for a class scope (e.g.,
               to resolve a nested class or callable against this scope).
+        func_local_parent_codeobj_weakref : FuncLocalParentCodeObjectWeakref
+            Proxy weakly referring to the code object underlying the lexical
+            scope of the parent module, type, or callable whose body locally
+            defines the locally decorated callable if this forward reference
+            proxy subtype proxies a stringified forward reference annotating a
+            locally decorated callable *or* :data:`None` otherwise. See also the
+            :attr:`beartype._check.forward.reference.fwdrefabc.BeartypeForwardRefABC.__func_local_parent_codeobj_weakref_beartype__`
+            class variable docstring for further details.
 
         Raises
         ------
         BeartypeDecorHintForwardRefException
             If this scope name is *not* a valid Python attribute name.
         '''
+        assert isinstance(
+            func_local_parent_codeobj_weakref,
+            NoneTypeOr[WeakrefCallableType]
+        ), (
+            f'{repr(func_local_parent_codeobj_weakref)} neither weak reference '
+            f'nor "None".'
+        )
         assert isinstance(scope_dict, dict), (
             f'{repr(scope_dict)} not dictionary.')
 
@@ -191,6 +221,8 @@ class BeartypeForwardScope(LexicalScope):
         # Else, this scope name is syntactically valid.
 
         # Classify all passed parameters.
+        self._func_local_parent_codeobj_weakref = (
+            func_local_parent_codeobj_weakref)
         self._scope_name = scope_name
 
         # Default all remaining parameters to sane initial values.
@@ -219,12 +251,21 @@ class BeartypeForwardScope(LexicalScope):
               :class:`.BeartypeForwardRefSubbableABC` object) deferring the
               resolution of this unresolved type hint implicitly created and
               returned by the lower-level :meth:`__missing__` dunder method.
+
+        Raises
+        ------
+        BeartypeDecorHintForwardRefException
+            If this type hint name is *not* a valid Python identifier.
         '''
 
         # Non-string type hint destringified from this stringified forward
         # reference type hint, either explicitly against this dictionary by the
         # default superclass implementation *OR* implicitly as a forward
         # reference proxy by the __missing__() dunder method defined below).
+        #
+        # Note that doing so raises the expected
+        # "BeartypeDecorHintForwardRefException" exception if this forward
+        # reference type hint is *NOT* a valid Python identifier.
         hint = super().__getitem__(hint_name)
 
         # Record this stringified reference as having been destringified.
@@ -260,7 +301,7 @@ class BeartypeForwardScope(LexicalScope):
         -------
         **This dunder method is susceptible to misuse by third-party frameworks
         that perform call stack inspection.** The higher-level
-        :func:`beartype._check.forward.fwdresolve.resolve_hint_pep484_ref_str_decor_meta`
+        :func:`beartype._check.forward.fwdresolve._resolve_hint_pep484_ref_str`
         function internally invokes this dunder method by calling the
         :func:`eval` builtin, which then adds a new frame to the call stack
         whose ``f_locals`` and ``f_globals`` attributes are this dictionary. If
@@ -331,7 +372,7 @@ class BeartypeForwardScope(LexicalScope):
           :mod:`beartype` codebase, creating and returning a forward reference
           proxy.
         * If this dunder method is called by a caller defined *outside* the
-          :mod:`beartype` codebase, raising a standard :class:`AttributeError`.
+          :mod:`beartype` codebase, raising a standard :class:`KeyError`.
 
         Parameters
         ----------
@@ -348,7 +389,7 @@ class BeartypeForwardScope(LexicalScope):
         Raises
         ------
         BeartypeDecorHintForwardRefException
-            If this type hint name is *not* a valid Python attribute name.
+            If this type hint name is *not* a valid Python identifier.
         '''
         # print(f'Missing type hint: {repr(hint_name)}')
 
@@ -360,17 +401,35 @@ class BeartypeForwardScope(LexicalScope):
         )
         # Else, this type hint name is syntactically valid.
 
+        #FIXME: Preserve to debug stack frame madness, which *ALWAYS* happens.
+        # func_frames = iter_frames(
+        #     ignore_frames=0,
+        #     is_ignore_beartype_frames=False,
+        #     is_ignore_nonpython_frames=False,
+        #     is_ignore_unmoduled_frames=False,
+        # )
+        # print('[BeartypeForwardScope.__missing__()]:')
+        # for func_frame_index, func_frame in enumerate(func_frames):
+        #     print(f'func_frame {func_frame_index}: {repr(func_frame)}')
+        # print('\n')
+        # print(f'is beartype 1? {is_frame_caller_beartype(ignore_frames=1)}')
+        # print(f'is beartype 2? {is_frame_caller_beartype(ignore_frames=2)}')
+
         # If it is *NOT* the case that...
         if not (  # pragma: no cover
             # The caller directly resides inside the "beartype" package *OR*...
-            is_frame_caller_beartype(ignore_frames=1) or
+            #
+            # Note that passing "ignore_frames=1" would simply ignore the parent
+            # BeartypeForwardScope.__getitem__() dunder method. Since that
+            # method is *GUARANTEED* to be the only parent method of this child
+            # method, passing "ignore_frames=1" is useless.
+            is_frame_caller_beartype(ignore_frames=2) or
             # The caller indirectly resides inside the "beartype" package. This
             # common edge cases arises when the parent
-            # beartype._check.forward.fwdresolve.resolve_hint_pep484_ref_str_decor_meta() function calls
-            # the eval() builtin to dynamically evaluate the passed stringified
-            # type hint: e.g.,
+            # _resolve_hint_pep484_ref_str() function calls the eval() builtin
+            # to dynamically evaluate the passed stringified type hint: e.g.,
             #     # This is the eval() call triggering this call.
-            #     hint_resolved = eval(hint, decor_metafunc_wrappee_wrappee_scope_forward)
+            #     hint_resolved = eval(hint, scope_forward)
             #
             # In this case, the prior call to the is_frame_caller_beartype()
             # tester tested the stack frame of that eval() call and,
@@ -382,15 +441,15 @@ class BeartypeForwardScope(LexicalScope):
             # "beartype._check.forward.fwdresolve" submodule performing that
             # call. Look. We don't like this fragility any more than you do, but
             # Python shenanigans leave us little choice. Our paws are tied!
-            is_frame_caller_beartype(ignore_frames=2)
+            is_frame_caller_beartype(ignore_frames=3)
         ):
             # Then the caller is a third-party. In this case, assume this
             # erroneous attempt to access a non-existent attribute of this scope
             # to *ACTUALLY* be an Easier to Ask for Permission than Forgiveness
             # (EAFP)-driven attempt to detect whether this forward scope defines
             # this attribute ala the hasattr() builtin. In this case, raise the
-            # expected "AttributeError." See the "Caveats" subsection of this
-            # dunder method's docstring for commentary.
+            # standard "KeyError" exception expected by callers. See also the
+            # "Caveats" subsection of the docstring for commentary.
 
             # print(f'caller+1: {get_frame_caller_module_name_or_none(ignore_frames=1)}')
             # print(f'caller+2: {get_frame_caller_module_name_or_none(ignore_frames=2)}')
@@ -413,29 +472,18 @@ class BeartypeForwardScope(LexicalScope):
                     f'via third-party module "{frame_caller_module_name}" ')
             # Else, the caller has *NO* module.
 
-            # Raise this exception message. Note that we intentionally avoid
-            # suffixing the exception message by a "." character here. Why?
-            # Because Python treats "AttributeError" exceptions as special.
-            # Notably, Python appears to actually:
-            # 1. Parse apart the messages of these exceptions for the
-            #    double-quoted attribute name embedded in these messages.
-            # 2. Suffix these messages by a "." character followed by a sentence
-            #    suggesting an existing attribute with a similar name to that of
-            #    the attribute name previously parsed from these messages.
-            #
-            # For example, given an erroneous lookup of a non-existent dunder
-            # attribute "__nomnom_beartype__", Python expands the exception
-            # message raised below into:
-            #     AttributeError: Forward reference scope "MuhRef" dunder
-            #     attribute "__nomnom_beartype__" not found. Did you mean:
-            #     '__name_beartype__'?
-            raise AttributeError(f'{exception_message}not found')
+            # Raise the expected exception.
+            raise KeyError(f'{exception_message}not found.')
         # Else, the caller resides inside the "beartype" package and is thus
         # assumed to be trustworthy. Don't let us down, @beartype! Not again!
 
         # Forward reference proxy to be returned.
         forwardref_subtype = make_forwardref_subbable_subtype(
-            hint_name=hint_name, scope_name=self._scope_name)
+            hint_name=hint_name,
+            scope_name=self._scope_name,
+            func_local_parent_codeobj_weakref=(
+                self._func_local_parent_codeobj_weakref),
+        )
 
         # Cache this proxy, preventing the "dict" superclass from re-calling
         # this __missing__() dunder method on the next attempt to access this.
@@ -454,7 +502,7 @@ class BeartypeForwardScope(LexicalScope):
         # Defer to our superclass.
         super().clear()
 
-        # Clear all subclass-specific instance variables as well. 
+        # Clear all subclass-specific instance variables as well.
         self._hint_names_destringified.clear()
 
     # ..................{ MINIFIERS                          }..................

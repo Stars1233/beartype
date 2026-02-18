@@ -4,7 +4,7 @@
 # See "LICENSE" for further details.
 
 '''
-Beartype decorator **forward reference factory** unit tests.
+Beartype **forward reference factory** unit tests.
 
 This submodule unit tests the
 :func:`beartype._check.forward.reference.fwdrefmake` submodule.
@@ -30,7 +30,11 @@ def test_make_forwardref_subbable_subtype() -> None:
         BeartypeCallHintForwardRefException,
         BeartypeDecorHintForwardRefException,
     )
-    from beartype_test.a00_unit.data.check.forward.data_fwdref import (
+    from beartype_test.a00_unit.data.data_type import (
+        Class,
+        Subclass,
+    )
+    from beartype_test.a00_unit.data.pep.pep484.forward.data_pep484ref_proxy import (
         CLASS_BASENAME,
         CLASS_NAME,
         FORWARDREF_ABSOLUTE,
@@ -42,10 +46,6 @@ def test_make_forwardref_subbable_subtype() -> None:
         MODULE_NAME,
         PACKAGE_NAME,
         SCOPE_NAME,
-    )
-    from beartype_test.a00_unit.data.data_type import (
-        Class,
-        Subclass,
     )
     from pytest import raises
 

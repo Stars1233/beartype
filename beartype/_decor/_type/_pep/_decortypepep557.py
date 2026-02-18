@@ -164,12 +164,6 @@ from beartype._util.utilobject import get_object_type_name
 #  * Generalize the BeartypeForwardScope.__init__() method to accept a new
 #    optional parameter:
 #        func_local_parent_codeobj_weakref: Optional[weakref.ref] = None
-#  * Generalize the BeartypeForwardScope.__missing__() method to pass
-#    "self.func_local_parent_codeobj_weakref" to the
-#    make_forwardref_subbable_subtype() factory as a new optional parameter with
-#    a similar signature as above. That factory should store this parameter if
-#    non-"None" as a new "__func_local_parent_codeobj_beartype__" class
-#    variable.
 #  * In make_scope_forward_decor_meta():
 #    * Store that stack frame as a local variable.
 #    * When instantiating "BeartypeForwardScope", pass a new parameter:

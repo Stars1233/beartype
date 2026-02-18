@@ -4,7 +4,7 @@
 # See "LICENSE" for further details.
 
 '''
-Beartype decorator **forward reference tester** unit tests.
+Beartype **forward reference tester** unit tests.
 
 This submodule unit tests the
 :func:`beartype._check.forward.reference.fwdreftest` submodule.
@@ -26,11 +26,11 @@ def test_is_forwardref() -> None:
 
     # ....................{ LOCALS                         }....................
     # Defer test-specific imports.
-    from beartype_test.a00_unit.data.check.forward.data_fwdref import (
-        FORWARDREF_ABSOLUTE)
     from beartype._check.forward.reference.fwdreftest import (
         is_beartype_forwardref)
     from beartype_test.a00_unit.data.data_type import Class
+    from beartype_test.a00_unit.data.pep.pep484.forward.data_pep484ref_proxy import (
+        FORWARDREF_ABSOLUTE)
 
     # ....................{ ASSERTS                        }....................
     # Assert that this tester accepts a forward reference proxy.

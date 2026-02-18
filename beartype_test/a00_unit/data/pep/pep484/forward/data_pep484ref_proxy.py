@@ -4,11 +4,11 @@
 # See "LICENSE" for further details.
 
 '''
-Test-wide **forward reference proxy test data** submodule.
+Test-wide **forward reference proxy** (i.e., low-level objects created by the
+:func:`beartype._check.forward.reference.fwdrefmake` submodule) data submodule.
 
-This submodule predefines **forward reference proxies** (i.e., low-level objects
-created by the :func:`beartype._check.forward.reference.fwdrefmake` submodule)
-exercising known edge cases on behalf of higher-level unit test submodules.
+This submodule predefines forward reference proxies that test known edge cases
+on behalf of higher-level unit test submodules.
 '''
 
 # ....................{ IMPORTS                            }....................
@@ -37,13 +37,13 @@ Fully-qualified name of the same submodule.
 
 CLASS_BASENAME = 'Class'
 '''
-Unqualified basename of that class in that module.
+Unqualified basename of that type in that module.
 '''
 
 
 CLASS_NAME = f'{MODULE_NAME}.{CLASS_BASENAME}'
 '''
-Fully-qualified name of that class.
+Fully-qualified name of that type.
 '''
 
 
@@ -75,7 +75,7 @@ FORWARDREF_ABSOLUTE = make_forwardref_subbable_subtype(
     scope_name=SCOPE_NAME,
 )
 '''
-Forward reference proxy to an unsubscripted class referenced with an absolute
+Forward reference proxy to an unsubscripted type referenced by an absolute
 (i.e., fully-qualified) name.
 '''
 
@@ -83,8 +83,8 @@ Forward reference proxy to an unsubscripted class referenced with an absolute
 FORWARDREF_RELATIVE = make_forwardref_subbable_subtype(
     hint_name=CLASS_BASENAME, scope_name=MODULE_NAME)
 '''
-Forward reference proxy to an unsubscripted class referenced with a
-relative (i.e., unqualified) name.
+Forward reference proxy to an unsubscripted type referenced by a relative (i.e.,
+unqualified) name.
 '''
 
 

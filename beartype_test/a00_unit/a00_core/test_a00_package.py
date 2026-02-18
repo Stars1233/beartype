@@ -62,6 +62,9 @@ def test_api_deprecations() -> None:
         'beartype.BeartypeDecorationPosition': 'beartype.BeartypeDecorPlace',
         'beartype.BeartypeHintOverrides': 'beartype.FrozenDict',
         'beartype.abby': 'beartype.door',
+        'beartype.cave.HintPep585Type': 'beartype.cave.HintGenericSubscriptedType',
+        'beartype.cave.WeakRefCType': 'beartype.cave.WeakrefCallableType',
+        'beartype.cave.WeakRefProxyCTypes': 'beartype.cave.WeakrefProxyTypes',
         'beartype.door.infer_hint': 'beartype.bite.infer_hint',
     }
 

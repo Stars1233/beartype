@@ -14,13 +14,14 @@ This submodule unit tests the public API of the :mod:`beartype.cave` submodule.
 # WARNING: To raise human-readable test errors, avoid importing from
 # package-specific submodules at module scope.
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-import argparse, functools, re, sys, weakref
-from beartype_test._util.mark.pytskip import skip_if_pypy, skip_unless_package
+from enum import Enum
+import re
+from beartype_test._util.mark.pytskip import (
+    skip_if_pypy,
+    skip_unless_package,
+)
 from collections import deque
 from collections.abc import Iterable
-from decimal import Decimal
-from enum import Enum
-from fractions import Fraction
 
 # ....................{ TODO                               }....................
 #FIXME: Unit test the following types, which remain untested for the initial
@@ -240,8 +241,11 @@ def test_api_cave_type_core() -> None:
     # beartype cave, assert below that:
     # * This type is a simple type.
     # * An object expected to be of this type is of this type.
+    import argparse, sys, weakref
     from beartype import cave
     from beartype_test.a00_unit.data.data_type import builtin_partial
+    from decimal import Decimal
+    from fractions import Fraction
 
     # ....................{ ASSERTS                        }....................
     # Test "UnavailableType". By definition, no objects of this type exist;
@@ -357,9 +361,9 @@ def test_api_cave_type_core() -> None:
         cave.GeneratorCType,
         _CAME_THE_WHISPER_CAME_THE_VISION_CAME_THE_POWER_WITH_THE_NEED)
 
-    # Test "WeakRefCType" against...
+    # Test "WeakrefCallableType" against...
     _assert_type_objects(
-        cave.WeakRefCType,
+        cave.WeakrefCallableType,
         # Weak non-method reference.
         weakref.ref(_we_were_dreamers_dreaming_greatly_in_the_man_stifled_town),
         # Weak method reference.
@@ -514,13 +518,16 @@ def test_api_cave_tuple_core() -> None:
     :mod:`beartype.cave` submodule.
     '''
 
+    # ....................{ IMPORTS                        }....................
     # Defer test-specific imports. For each tuple type published by the beartype
     # cave, assert below that:
     # * This tuple contains only simple types.
     # * One or more objects expected to be of one or more types in this tuple
     #   are of these types.
     from beartype import cave
+    import sys, weakref
 
+    # ....................{ ASSERTS                        }....................
     # Test "UnavailableTypes". By definition, no objects of these types exist;
     # ergo, we only test that this tuple is simply an empty tuple.
     _assert_tuple_objects(cave.UnavailableTypes)
@@ -612,9 +619,9 @@ def test_api_cave_tuple_core() -> None:
     _assert_tuple_objects(
         cave.DecoratorTypes, _WeHaveFedOurSeaForAThousandYears)
 
-    # Test "WeakRefProxyCTypes" against...
+    # Test "WeakrefProxyTypes" against...
     _assert_tuple_objects(
-        cave.WeakRefProxyCTypes,
+        cave.WeakrefProxyTypes,
         # Callable weak reference proxy.
         weakref.proxy(
             _we_were_dreamers_dreaming_greatly_in_the_man_stifled_town),

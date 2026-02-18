@@ -100,7 +100,7 @@ def test_add_func_scope_types() -> None:
     from beartype._cave._cavemap import NoneTypeOr
     from beartype._check.code.codescope import add_func_scope_types
     from beartype._util.utilobject import get_object_type_basename
-    from beartype_test.a00_unit.data.check.forward.data_fwdref import (
+    from beartype_test.a00_unit.data.pep.pep484.forward.data_pep484ref_proxy import (
         FORWARDREF_ABSOLUTE,
         FORWARDREF_RELATIVE,
     )

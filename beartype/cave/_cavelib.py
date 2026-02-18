@@ -31,10 +31,6 @@ from argparse import (
     ArgumentParser,
     _SubParsersAction,
 )
-from weakref import (
-    ProxyTypes,
-    ref,
-)
 
 # ....................{ TYPES ~ lib                        }....................
 # Types conditionally dependent upon the importability of third-party
@@ -53,24 +49,4 @@ ArgSubparsersType = _SubParsersAction
 '''
 Type of argument subparser containers parsing subcommands for parent argument
 parsers parsing either top-level commands *or* subcommands of those commands.
-'''
-
-# ....................{ TYPES ~ stdlib : weakref           }....................
-WeakRefCType = ref
-'''
-Type of all **unproxied weak references** (i.e., callable objects yielding
-strong references to their referred objects when called).
-
-This type matches both the C-based :class:`weakref.ref` class *and* the
-pure-Python :class:`weakref.WeakMethod` class, which subclasses the former.
-'''
-# ....................{ TUPLES ~ stdlib : weakref          }....................
-WeakRefProxyCTypes = ProxyTypes
-'''
-Tuple of all **C-based weak reference proxy classes** (i.e., classes
-implemented in low-level C whose instances are weak references to other
-instances masquerading as those instances).
-
-This tuple contains classes matching both callable and uncallable weak
-reference proxies.
 '''

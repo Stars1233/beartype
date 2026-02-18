@@ -14,18 +14,12 @@ This private submodule is *not* intended for importation by downstream callers.
 
 # ....................{ IMPORTS                            }....................
 from beartype.roar import BeartypeDecorHintForwardRefException
-from beartype.typing import (
-    NoReturn,
-    Optional,
-)
-from beartype._cave._cavefast import (
-    CallableCodeObjectType,
-    WeakrefType,
-)
 from beartype._data.typing.datatyping import (
+    FuncLocalParentCodeObjectWeakref,
     LexicalScope,
 )
 from beartype._check.forward.reference.fwdrefmeta import BeartypeForwardRefMeta
+from typing import NoReturn
 
 # ....................{ SUPERCLASSES                       }....................
 #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -80,7 +74,7 @@ class BeartypeForwardRefABC(object, metaclass=BeartypeForwardRefMeta):
 
 
     __func_local_parent_codeobj_weakref_beartype__: (
-        Optional[WeakrefType[CallableCodeObjectType]]) = None
+        FuncLocalParentCodeObjectWeakref) = None
     '''
     C-based **weak reference proxy** (i.e., :class:`weakref.ref` object) weakly
     referring to the C-based code object underlying the lexical scope of the
@@ -382,8 +376,10 @@ class BeartypeForwardRefSubbableABC(BeartypeForwardRefABC):
 
         # Subscripted forward reference to be returned.
         forwardref_indexed_subtype = make_forwardref_subbed_subtype(
-            scope_name=cls.__scope_name_beartype__,
             hint_name=cls.__name_beartype__,
+            scope_name=cls.__scope_name_beartype__,
+            func_local_parent_codeobj_weakref=(
+                cls.__func_local_parent_codeobj_weakref_beartype__),
         )
 
         # Classify the arguments subscripting this forward reference.

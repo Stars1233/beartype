@@ -49,13 +49,13 @@ def is_frame_caller_beartype(
         the stack frame encapsulating the call to this getter). Defaults to 1,
         signifying the stack frame of the **caller** directly calling this
         getter.
-    is_beartype_test : bool, optional
+    is_beartype_test : bool, default: False
         :data:`True` only if this tester additionally returns :data:`True` when
         the caller resides inside the related :mod:`beartype_test` codebase.
         Defaults to :data:`False`; thus, this tester returns :data:`False` when
         the caller resides inside the related :mod:`beartype_test` codebase by
         default and treats :mod:`beartype_test` as an external third-party.
-    exception_cls : TypeException, optional
+    exception_cls : TypeException, default: _BeartypeUtilCallFrameException
         Type of exception to be raised in the event of a fatal error. Defaults
         to :class:`._BeartypeUtilCallFrameException`.
 

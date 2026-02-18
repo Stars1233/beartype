@@ -15,9 +15,12 @@ This private submodule is *not* intended for importation by downstream callers.
 
 # ....................{ IMPORTS                            }....................
 from beartype.roar import BeartypeDecorHintForwardRefException
+from beartype._cave._cavefast import WeakrefCallableType
+from beartype._cave._cavemap import NoneTypeOr
 from beartype._data.typing.datatyping import (
     BeartypeForwardRef,
     BeartypeForwardRefArgs,
+    FuncLocalParentCodeObjectWeakref,
     TupleTypes,
 )
 from beartype._check.forward.reference.fwdrefabc import (
@@ -36,6 +39,7 @@ def make_forwardref_subbable_subtype(
     scope_name: str,
 
     # Optional parameters.
+    func_local_parent_codeobj_weakref: FuncLocalParentCodeObjectWeakref = None,
 ) -> type[BeartypeForwardRefSubbableABC]:
     '''
     Create and return a new **subscriptable forward reference subclass** (i.e.,
@@ -62,6 +66,14 @@ def make_forwardref_subbable_subtype(
           resolve a global class or callable against this scope).
         * ``"some_package.some_module.SomeClass"`` for a class scope (e.g.,
           to resolve a nested class or callable against this scope).
+    func_local_parent_codeobj_weakref : FuncLocalParentCodeObjectWeakref
+        Proxy weakly referring to the code object underlying the lexical scope
+        of the parent module, type, or callable whose body locally defines the
+        locally decorated callable if this forward reference proxy subtype
+        proxies a stringified forward reference annotating a locally decorated
+        callable *or* :data:`None` otherwise. See also the
+        :attr:`beartype._check.forward.reference.fwdrefabc.BeartypeForwardRefABC.__func_local_parent_codeobj_weakref_beartype__`
+        class variable docstring for further details.
 
     Returns
     -------
@@ -77,15 +89,17 @@ def make_forwardref_subbable_subtype(
 
     # Subscriptable forward reference to be returned.
     return _make_forwardref_subtype(  # type: ignore[return-value]
+        type_bases=BeartypeForwardRefSubbableABC_BASES,
         hint_name=hint_name,
         scope_name=scope_name,
-        type_bases=BeartypeForwardRefSubbableABC_BASES,
+        func_local_parent_codeobj_weakref=func_local_parent_codeobj_weakref,
     )
 
 
 def make_forwardref_subbed_subtype(
     hint_name: str,
     scope_name: str,
+    func_local_parent_codeobj_weakref: FuncLocalParentCodeObjectWeakref,
 ) -> type[BeartypeForwardRefSubbedABC]:
     '''
     Create and return a new **subscripted forward reference subclass** (i.e.,
@@ -107,7 +121,15 @@ def make_forwardref_subbed_subtype(
     scope_name : str
         Possibly ignored fully-qualified name of the lexical scope in which this
         unresolved type hint was originally declared. See also
-        :func:`.make_forwardref_subbable_subtype` for further details.
+        :func:`.make_forwardref_subbable_subtype` docstring for further details.
+    func_local_parent_codeobj_weakref : FuncLocalParentCodeObjectWeakref
+        Proxy weakly referring to the code object underlying the lexical scope
+        of the parent module, type, or callable whose body locally defines the
+        locally decorated callable if this forward reference proxy subtype
+        proxies a stringified forward reference annotating a locally decorated
+        callable *or* :data:`None` otherwise. See also the
+        :attr:`beartype._check.forward.reference.fwdrefabc.BeartypeForwardRefABC.__func_local_parent_codeobj_weakref_beartype__`
+        class variable docstring for further details.
 
     Returns
     -------
@@ -123,16 +145,18 @@ def make_forwardref_subbed_subtype(
 
     # Subscriptable forward reference to be returned.
     return _make_forwardref_subtype(  # type: ignore[return-value]
+        type_bases=BeartypeForwardRefSubbedABC_BASES,
         hint_name=hint_name,
         scope_name=scope_name,
-        type_bases=BeartypeForwardRefSubbedABC_BASES,
+        func_local_parent_codeobj_weakref=func_local_parent_codeobj_weakref,
     )
 
 # ....................{ PRIVATE ~ factories                }....................
 def _make_forwardref_subtype(
+    type_bases: TupleTypes,
     hint_name: str,
     scope_name: str,
-    type_bases: TupleTypes,
+    func_local_parent_codeobj_weakref: FuncLocalParentCodeObjectWeakref,
 ) -> BeartypeForwardRef:
     '''
     Create and return a new **forward reference subclass** (i.e., concrete
@@ -196,18 +220,26 @@ def _make_forwardref_subtype(
 
     Parameters
     ----------
-    hint_name : str
-        Absolute (i.e., fully-qualified) or relative (i.e., unqualified) name of
-        this unresolved type hint to be proxied.
-    scope_name : str
-        Possibly ignored fully-qualified name of the lexical scope in which this
-        unresolved type hint was originally declared. See also
-        :func:`.make_forwardref_subbable_subtype` for further details.
     type_bases : Tuple[type, ...]
         Tuple of all base classes to be inherited by this forward reference
         subclass. For simplicity, this *must* be a 1-tuple ``(type_base,)``
         where ``type_base`` is a :class:`.BeartypeForwardRefSubbableABC`
         subclass.
+    hint_name : str
+        Absolute (i.e., fully-qualified) or relative (i.e., unqualified) name of
+        this unresolved type hint to be proxied.
+    scope_name : str
+        Possibly ignored fully-qualified name of the lexical scope in which this
+        unresolved type hint was originally declared. See also the
+        :func:`.make_forwardref_subbable_subtype` docstring for further details.
+    func_local_parent_codeobj_weakref : FuncLocalParentCodeObjectWeakref
+        Proxy weakly referring to the code object underlying the lexical scope
+        of the parent module, type, or callable whose body locally defines the
+        locally decorated callable if this forward reference proxy subtype
+        proxies a stringified forward reference annotating a locally decorated
+        callable *or* :data:`None` otherwise. See also the
+        :attr:`beartype._check.forward.reference.fwdrefabc.BeartypeForwardRefABC.__func_local_parent_codeobj_weakref_beartype__`
+        class variable docstring for further details.
 
     Returns
     -------
@@ -238,13 +270,13 @@ def _make_forwardref_subtype(
     # memoization is guaranteed to be safe here. So say we all.
 
     # Tuple of all passed parameters (in arbitrary order).
-    args: BeartypeForwardRefArgs = (scope_name, hint_name, type_bases)
+    args: BeartypeForwardRefArgs = (
+        type_bases, hint_name, scope_name, func_local_parent_codeobj_weakref)
 
-    #FIXME: [SPEED] Globalize this _forwardref_args_to_forwardref.get() method.
     # Forward reference proxy previously created and returned by a prior call to
     # this function passed these parameters if any *OR* "None" otherwise (i.e.,
     # if this is the first call to this function passed these parameters).
-    forwardref_subtype = _forwardref_args_to_forwardref.get(args, None)
+    forwardref_subtype = _forwardref_args_to_forwardref_get(args, None)
 
     # If this proxy has already been created, reuse and return this proxy as is.
     if forwardref_subtype is not None:
@@ -254,10 +286,14 @@ def _make_forwardref_subtype(
     # ....................{ VALIDATE                       }....................
     # Validate all passed parameters *AFTER* attempting to reuse a previously
     # memoized forward reference, for efficiency.
-    assert isinstance(hint_name, str), f'{repr(hint_name)} not string.'
-    assert isinstance(scope_name, str), f'{repr(scope_name)} not string.'
     assert len(type_bases) == 1, (
         f'{repr(type_bases)} not 1-tuple of a single superclass.')
+    assert isinstance(hint_name, str), f'{repr(hint_name)} not string.'
+    assert isinstance(scope_name, str), f'{repr(scope_name)} not string.'
+    assert isinstance(
+        func_local_parent_codeobj_weakref, NoneTypeOr[WeakrefCallableType]), (
+        f'{repr(func_local_parent_codeobj_weakref)} neither weak reference '
+        f'nor "None".')
 
     # If this attribute name is *NOT* a syntactically valid Python identifier,
     # raise an exception.
@@ -291,6 +327,8 @@ def _make_forwardref_subtype(
     # Classify passed parameters with this proxy.
     forwardref_subtype.__name_beartype__ = hint_name  # pyright: ignore
     forwardref_subtype.__scope_name_beartype__ = scope_name  # pyright: ignore
+    forwardref_subtype.__func_local_parent_codeobj_weakref_beartype__ = (
+        func_local_parent_codeobj_weakref)
 
     # Cache this proxy for reuse by subsequent calls to this factory function
     # passed the same parameters.
@@ -316,4 +354,11 @@ This cache serves a dual purpose. Notably, this cache both enables:
 * :func:`._make_forwardref_subtype` to internally memoize itself over its
   passed parameters. Since the existing ``callable_cached`` decorator could
   trivially do so as well, however, this is only a negligible side effect.
+'''
+
+
+_forwardref_args_to_forwardref_get = _forwardref_args_to_forwardref.get
+'''
+:meth:`dict.get` method bound to the :data:`._forwardref_args_to_forwardref`
+dictionary global (as a negligible micro-optimization).
 '''
